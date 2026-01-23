@@ -56,6 +56,7 @@ RUN set -eux && \
     docker-php-ext-install gd && \
     docker-php-ext-install intl && \
     docker-php-ext-install mysqli && \
+    docker-php-ext-install pdo_mysql && \
     docker-php-ext-install zip
 
 # Download cv (https://github.com/civicrm/cv)
