@@ -8,6 +8,20 @@ services:
     volumes:
       - uploads:/var/www/html/wp-content/uploads
       - private:/var/www/private
+      # DEPLOYMENT WORKFLOWS:
+      #
+      # Workflow A - Simple Production (current setup):
+      #   - CiviCRM from image, mount only uploads
+      #   - Cannot install additional plugins via WordPress admin
+      #
+      # Workflow B - Flexible Production (uncomment line below):
+      #   - Mount entire wp-content for plugin management
+      #   - Must install CiviCRM manually: see documentation
+      # - wpcontent:/var/www/html/wp-content
+      #
+      # Workflow C - Development (see compose.dev.yaml):
+      #   - Mount local CiviCRM code for development
+      #   - Use: docker compose -f compose.yaml -f compose.dev.yaml up
     environment:
       # CIVICRM_DSN: mysql://civicrm:${MYSQL_PASSWORD}@db:3306/civicrm # Note: you can also pass database credentials as a DSN.
       CIVICRM_DB_HOST: db
@@ -40,3 +54,4 @@ volumes:
   uploads:
   private:
   db:
+  # wpcontent:  # Uncomment for Workflow B (Flexible Production)
