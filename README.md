@@ -6,7 +6,7 @@ Container images are published to [Docker Hub](https://hub.docker.com/u/civicrm)
 
 If you are looking for a **ready to use** CiviCRM application, use `civicrm/civicrm`. If you are looking for an image that you can use as part of a customised **Docker build process**, use `civicrm/civicrm-base`.
 
-Note: there are currently no official images for CiviCRM with WordPress, Joomla, Backdrop, or Drupal.
+Note: WordPress images are fully implemented but not yet published to Docker Hub. Other CMS integrations (Joomla, Backdrop, Drupal) are not currently available.
 
 ## Quick start
 
@@ -163,12 +163,9 @@ flowchart BT
     E[wordpress]
     D[wordpress-base] --> E
     A --> D
-    D:::disabled
-    E:::disabled
-    classDef disabled opacity:.5
 ```
 
-Note: the WordPress images do not currently exist but are here to illustrate how we might add them in the future.
+Note: WordPress images are fully implemented but not yet published to Docker Hub.
 
 ## Management
 
@@ -192,3 +189,267 @@ Command options are as follows:
 - **--step** - run one step at a time
 
 Note: before running `./build.php`, you will need to install the required dependencies with `composer install` (see https://getcomposer.org/ for more details).
+
+## WordPress
+
+The WordPress + CiviCRM images provide CiviCRM running as a WordPress plugin. These images are fully implemented but not yet published to Docker Hub.
+
+If you are looking for a **ready to use** WordPress + CiviCRM application, use `civicrm/wordpress`. If you are building a custom image, use `civicrm/wordpress-base`.
+
+### Quick start
+
+**Note**: These instructions are for testing purposes, not production deployment.
+
+#### Running the image
+
+```shell
+docker run --detach --publish 8000:80 civicrm/wordpress
+```
+
+You must complete the installation process (see below) before WordPress and CiviCRM are usable.
+
+#### With docker compose
+
+A complete example is in the [`example/wordpress`](example/wordpress) directory.
+
+1. Clone this repository: `git clone https://github.com/civicrm/civicrm-docker`
+2. Change directory: `cd civicrm-docker/example/wordpress`
+3. Review/edit `.env` file (contains passwords and admin credentials)
+4. Start containers: `docker compose up -d`
+5. Wait for database initialization: `docker compose logs -f db` (wait for "ready for connections")
+6. Install WordPress and CiviCRM: `docker compose exec -u www-data app civicrm-docker-install`
+7. Visit http://localhost:8760 and log in with credentials from `.env`
+8. When finished: `docker compose down`
+
+### Deployment Workflows
+
+WordPress sites have different requirements for production vs development. Choose the workflow that matches your needs:
+
+#### Workflow A: Simple Production (Immutable Infrastructure)
+
+**Best for**: Locked-down CiviCRM-only sites where plugins are managed via Docker images.
+
+**Configuration**:
+- CiviCRM is baked into the Docker image
+- Mount only: `/var/www/html/wp-content/uploads` (user uploads)
+- No additional plugin management via WordPress admin
+
+**Limitations**: Plugins installed via WordPress admin will be lost on container restart.
+
+**Example** (current `compose.yaml` default):
+```yaml
+volumes:
+  - uploads:/var/www/html/wp-content/uploads
+  - private:/var/www/private
+```
+
+**Installation**: Use `civicrm-docker-install` script (installs CiviCRM from image).
+
+#### Workflow B: Flexible Production (Persistent wp-content)
+
+**Best for**: Production sites where administrators need to install/update plugins and themes via WordPress admin.
+
+**Configuration**:
+- Mount entire `/var/www/html/wp-content` directory
+- CiviCRM is NOT baked into image - install manually into mounted volume
+- Full plugin/theme management via WordPress admin
+
+**Trade-offs**: Larger volumes, must manage CiviCRM updates manually.
+
+**Example**:
+```yaml
+volumes:
+  - wpcontent:/var/www/html/wp-content
+  - private:/var/www/private
+
+volumes:
+  wpcontent:
+  private:
+```
+
+**Installation**:
+1. Start containers (without CiviCRM installed yet)
+2. Install WordPress core: `docker compose exec -u www-data app wp core install ...`
+3. Download CiviCRM to mounted volume: `docker compose exec -u www-data app wp plugin install https://download.civicrm.org/civicrm-VERSION-wordpress.zip`
+4. Activate and configure CiviCRM via WordPress admin
+
+**Note**: The `civicrm-docker-install` script expects CiviCRM in the image, so it won't work for this workflow. Use manual installation instead.
+
+#### Workflow C: Development (Local Code Override)
+
+**Best for**: CiviCRM core developers or plugin developers who need to work on local code.
+
+**Configuration**:
+- CiviCRM from image is overridden by bind mount to local directory
+- Mount local CiviCRM code at `/var/www/html/wp-content/plugins/civicrm`
+- Changes to local files appear immediately in container
+
+**Example** (`compose.dev.yaml`):
+```yaml
+services:
+  app:
+    volumes:
+      - /path/to/local/civicrm-wordpress:/var/www/html/wp-content/plugins/civicrm
+```
+
+**Usage**:
+```shell
+# Start with development override
+docker compose -f compose.yaml -f compose.dev.yaml up -d
+
+# Make changes to local code - they appear instantly
+
+# Switch back to production (image-based code)
+docker compose down
+docker compose up -d
+```
+
+**Installation**: Use `civicrm-docker-install` script (works with mounted code).
+
+**See**: [`example/wordpress/compose.dev.yaml`](example/wordpress/compose.dev.yaml) for complete example.
+
+### Environment variables
+
+**CiviCRM database**:
+- `CIVICRM_DB_HOST`, `CIVICRM_DB_PORT`, `CIVICRM_DB_NAME`, `CIVICRM_DB_USER`, `CIVICRM_DB_PASSWORD`
+- OR `CIVICRM_DSN` (e.g., `mysql://user:pass@host:3306/database`)
+
+**WordPress database**:
+- `WORDPRESS_DB_HOST` - Database host (e.g., `db`)
+- `WORDPRESS_DB_NAME` - Database name (typically same as CiviCRM database)
+- `WORDPRESS_DB_USER` - Database user
+- `WORDPRESS_DB_PASSWORD` - Database password
+- `WORDPRESS_CONFIG_FILE` - Path to store wp-config.php (e.g., `/var/www/private/wp-config.php`)
+
+**Site configuration**:
+- `CIVICRM_UF_BASEURL` - Site URL (e.g., `http://localhost:8760`)
+- `WORDPRESS_SITE_TITLE` - WordPress site title
+
+**Installation credentials**:
+- `CIVICRM_ADMIN_USER` - Admin username
+- `CIVICRM_ADMIN_PASS` - Admin password
+- `CIVICRM_ADMIN_EMAIL` - Admin email
+
+**Optional**:
+- `APACHE_PORT` - Override Apache port inside container (default: 80)
+- `PHP_MEMORY_LIMIT` - PHP memory limit (default: 256M)
+
+### Installation
+
+#### For Workflows A and C (civicrm-docker-install)
+
+The `civicrm/wordpress` image includes `civicrm-docker-install` script that:
+1. Creates wp-config.php at `WORDPRESS_CONFIG_FILE` location
+2. Installs WordPress core
+3. Installs CiviCRM plugin
+
+**Prerequisites**: All environment variables must be set.
+
+**Usage**:
+```shell
+docker compose exec -u www-data app civicrm-docker-install
+```
+
+**Important**: Run as `www-data` user to ensure correct file permissions.
+
+See [build/wordpress/civicrm-docker-install](build/wordpress/civicrm-docker-install) for details.
+
+#### For Workflow B (Manual Installation)
+
+When using persistent wp-content volume:
+
+1. **Install WordPress core**:
+   ```shell
+   docker compose exec -u www-data app wp core install \
+     --url=${CIVICRM_UF_BASEURL} \
+     --title="${WORDPRESS_SITE_TITLE}" \
+     --admin_user=${CIVICRM_ADMIN_USER} \
+     --admin_password=${CIVICRM_ADMIN_PASS} \
+     --admin_email=${CIVICRM_ADMIN_EMAIL}
+   ```
+
+2. **Download CiviCRM**:
+   ```shell
+   docker compose exec -u www-data app wp plugin install \
+     https://download.civicrm.org/civicrm-6.0-wordpress.zip
+   ```
+
+3. **Activate and configure** CiviCRM via WordPress admin interface.
+
+### Volumes
+
+Volume requirements depend on your deployment workflow:
+
+#### Workflow A (Simple Production):
+```yaml
+volumes:
+  - uploads:/var/www/html/wp-content/uploads    # User uploads (required)
+  - private:/var/www/private                     # WordPress config (required)
+```
+
+#### Workflow B (Flexible Production):
+```yaml
+volumes:
+  - wpcontent:/var/www/html/wp-content  # Entire wp-content (includes plugins, themes, uploads)
+  - private:/var/www/private             # WordPress config (required)
+```
+
+#### Workflow C (Development):
+```yaml
+volumes:
+  - uploads:/var/www/html/wp-content/uploads              # User uploads
+  - private:/var/www/private                               # WordPress config
+  - /local/path:/var/www/html/wp-content/plugins/civicrm  # Local CiviCRM code
+```
+
+### Tags
+
+WordPress images use the same tagging strategy as CiviCRM Standalone:
+
+- `civicrm/wordpress:latest` - Latest stable CiviCRM + recommended PHP
+- `civicrm/wordpress:6` - Latest CiviCRM 6.x + recommended PHP
+- `civicrm/wordpress:6.0` - Latest CiviCRM 6.0.x + recommended PHP
+- `civicrm/wordpress:6.0-php8.3` - CiviCRM 6.0.x with PHP 8.3
+- `civicrm/wordpress:php8.3` - Latest stable CiviCRM with PHP 8.3
+
+### Building images
+
+Build WordPress images locally using the Dockerfile:
+
+```shell
+docker build build/wordpress \
+  --build-arg WORDPRESS_VERSION=6.9 \
+  --build-arg CIVICRM_VERSION=6.0 \
+  --build-arg PHP_VERSION=8.3 \
+  -t my-org/wordpress-civicrm
+```
+
+Or use the build script:
+
+```shell
+# Install dependencies first
+composer install
+
+# Build WordPress images
+./build.php --image-filter=wordpress-base,wordpress --php-version=8.3 --skip-push
+```
+
+This builds the full hierarchy: `common-base` → `wordpress-base` → `wordpress`.
+
+#### Custom builds
+
+For custom WordPress + CiviCRM images, extend `civicrm/wordpress-base`:
+
+```Dockerfile
+FROM civicrm/wordpress-base:php8.3
+
+# Install additional WordPress plugins
+RUN wp plugin install custom-plugin --activate --allow-root
+
+# Download specific CiviCRM version
+ARG CIVICRM_VERSION=6.0.3
+RUN curl -L https://download.civicrm.org/civicrm-${CIVICRM_VERSION}-wordpress.zip \
+  -o /tmp/civicrm.zip && \
+  unzip /tmp/civicrm.zip -d /var/www/html/wp-content/plugins && \
+  rm /tmp/civicrm.zip
+```
