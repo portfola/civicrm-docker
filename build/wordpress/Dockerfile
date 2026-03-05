@@ -36,17 +36,12 @@ RUN curl --fail --location ${CIVICRM_DOWNLOAD_URL} --output /tmp/civicrm-wordpre
 
 FROM ${IMAGE_PREFIX}/wordpress-base:php${PHP_VERSION}
 
-# Use the default production PHP configuration
+# Use the default production PHP configuration and set PHP memory limits
 
-RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-
-RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php-cli.ini" 
-
-# Set PHP memory limit
-
-RUN echo 'memory_limit = ${PHP_MEMORY_LIMIT:-"256M"}\n'  >> $PHP_INI_DIR/php.ini
-
-RUN echo 'memory_limit = -1\n' >> $PHP_INI_DIR/php-cli.ini
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php-cli.ini" \
+    && echo "memory_limit = 256M" >> "$PHP_INI_DIR/php.ini" \
+    && echo "memory_limit = -1" >> "$PHP_INI_DIR/php-cli.ini"
 
 # Copy the downloaded tarball to /var/www/html as the www-data user
 
