@@ -221,6 +221,16 @@ A complete example is in the [`example/wordpress`](example/wordpress) directory.
 7. Visit http://localhost:8760 and log in with credentials from `.env`
 8. When finished: `docker compose down`
 
+#### Using WP-CLI
+
+The WordPress images include a bash alias so that `wp` automatically runs as the `www-data` user via `sudo`. This means you can run WP-CLI commands directly when logged in as root:
+
+```shell
+docker compose exec app wp plugin list
+```
+
+Without the `-u www-data` flag, the alias handles running as the correct user.
+
 ### Deployment Workflows
 
 WordPress sites have different requirements for production vs development. Choose the workflow that matches your needs:
