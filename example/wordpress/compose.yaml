@@ -1,8 +1,7 @@
 services:
   app:
     hostname: example
-    # image: civicrm/wordpress:latest
-    image: portfola-civicrm-wp
+    image: civicrm/wordpress:latest
     ports:
       - 8760:80 # CiviCRM will be available on port 8760.
     restart: unless-stopped
@@ -11,14 +10,14 @@ services:
       - private:/var/www/private
       # DEPLOYMENT WORKFLOWS:
       #
-      # Workflow A - Simple Production:
+      # Workflow A - Simple Production (Default):
       #   - CiviCRM from image, mount only uploads
       #   - Cannot install additional plugins via WordPress admin
       #
       # Workflow B - Flexible Production (uncomment lines with wpcontent volume):
       #   - Mount entire wp-content for plugin management
       #   - Must install CiviCRM manually: see documentation
-      - wpcontent:/var/www/html/wp-content
+      # - wpcontent:/var/www/html/wp-content
       #
       # Workflow C - Development (see compose.dev.yaml):
       #   - Mount local CiviCRM code for development
@@ -55,4 +54,4 @@ volumes:
   uploads:
   private:
   db:
-  wpcontent:  # Uncomment for Workflow B (Flexible Production)
+  # wpcontent:  # Uncomment for Workflow B (Flexible Production)
