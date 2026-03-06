@@ -60,6 +60,7 @@ COPY civicrm-docker-entrypoint /usr/local/bin/
 COPY civicrm-docker-install /usr/local/bin/
 
 ENV CIVICRM_UF=WordPress
+ENV WORDPRESS_CONFIG_FILE=/var/www/private/wp-config.php
 
 # Allow Apache port to be configurable
 

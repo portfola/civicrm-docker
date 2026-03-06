@@ -18,6 +18,7 @@ FROM ${IMAGE_PREFIX}/common-base:php${PHP_VERSION}
 # Please document the reason for each installed package below.
 #
 # less is required for WP-CLI
+# sudo is convenient for running WP-CLI as the www-data user
 # mariadb-client is required for WP-CLI (already present in common-base)
 # unzip is required for uncompressing zip archives
 
@@ -25,6 +26,7 @@ RUN set -eux; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     less \
+    sudo \
     unzip \
     && \
     rm -rf /var/lib/apt/lists/*
@@ -44,3 +46,7 @@ RUN set -eux && \
 
 RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp \
     && chmod +x /usr/local/bin/wp
+
+# Add a wp alias that runs WP-CLI as www-data so that `docker compose exec app wp ...` works
+
+RUN echo "alias wp='sudo -u www-data wp'" >> /root/.bashrc
