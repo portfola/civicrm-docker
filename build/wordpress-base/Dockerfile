@@ -49,4 +49,4 @@ RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.ph
 
 # Add a wp alias that runs WP-CLI as www-data so that `docker compose exec app wp ...` works
 
-RUN echo "alias wp='sudo -u www-data wp'" >> /root/.bashrc
+RUN echo "alias wp='sudo -u www-data WORDPRESS_CONFIG_FILE=/var/www/private/wp-config.php wp' " >> /root/.bashrc
