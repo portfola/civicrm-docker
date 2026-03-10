@@ -47,6 +47,7 @@ RUN set -eux && \
 RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp \
     && chmod +x /usr/local/bin/wp
 
-# Add a wp alias that runs WP-CLI as www-data so that `docker compose exec app wp ...` works
+# Add a wp alias that runs WP-CLI as www-data user. This avoids the default warning about running wp as root. 
+# Note that noninteractive use e.g. `docker compose exec app wp ...` will not use the alias.
 
 RUN echo "alias wp='sudo -u www-data WORDPRESS_CONFIG_FILE=/var/www/private/wp-config.php wp' " >> /root/.bashrc
