@@ -43,12 +43,10 @@ RUN set -eux && \
 # Install WP-CLI
 #
 # Based on https://make.wordpress.org/cli/handbook/guides/installing/
-#
-# The real binary is installed as wp-cli.phar. A wrapper script at /usr/local/bin/wp
-# runs it as www-data with the correct WORDPRESS_CONFIG_FILE, ensuring it works in
-# interactive shells, non-interactive exec, and scripts.
 
-RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp-cli.phar \
-    && chmod +x /usr/local/bin/wp-cli.phar \
-    && printf '#!/bin/bash\nexec sudo -u www-data WORDPRESS_CONFIG_FILE="${WORDPRESS_CONFIG_FILE:-/var/www/private/wp-config.php}" /usr/local/bin/wp-cli.phar "$@"\n' > /usr/local/bin/wp \
+RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp \
     && chmod +x /usr/local/bin/wp
+
+# Add a wp alias that runs WP-CLI as www-data so that `docker compose exec app wp ...` works
+
+RUN echo "alias wp='sudo -u www-data WORDPRESS_CONFIG_FILE=/var/www/private/wp-config.php wp' " >> /root/.bashrc

@@ -14,9 +14,7 @@ ARG WORDPRESS_VERSION
 
 # Download WordPress
 
-# Use wp-cli.phar directly (not the /usr/local/bin/wp wrapper) because the
-# wrapper runs as www-data, which doesn't have write permission during build.
-RUN php -d memory_limit=-1 /usr/local/bin/wp-cli.phar core download --version=${WORDPRESS_VERSION} --allow-root
+RUN php -d memory_limit=-1 /usr/local/bin/wp core download --version=${WORDPRESS_VERSION} --allow-root
 
 # Create standard directories
 
